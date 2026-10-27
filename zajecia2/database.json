@@ -1,0 +1,290 @@
+{
+    "Q1": {
+        "text": "Jaki problem występuje w systemie Linux?",
+        "answers": ["no_internet", "slowness", "login_problem", "no_free_space_left", "permissions", "boot_error"]
+    },
+    "Q2": {
+        "text": "Czy problem pojawił się po aktualizacji systemu?",
+        "answers": ["true", "false"]
+    },
+    "Q3": {
+        "text": "Czy sieć Wi-Fi jest widoczna na liście dostępnych sieci?",
+        "answers": ["true", "false"]
+    },
+    "Q4": {
+        "text": "Czy inne urządzenia w tej samej sieci mają dostęp do internetu?",
+        "answers": ["true", "false"]
+    },
+    "Q5": {
+        "text": "Jak zajęty jest dysk systemowy?",
+        "answers": ["full", "high", "normal"]
+    },
+    "Q6": {
+        "text": "Czy ostatnie wyłączenie komputera przebiegło prawidłowo?",
+        "answers": ["true", "false"]
+    },
+    "Q7": {
+        "text": "Jak wygląda zużycie pamięci RAM?",
+        "answers": ["exhausted", "normal", "unknown"]
+    },
+    "Q8": {
+        "text": "Czy użytkownik ma uprawnienia administratora (sudo)?",
+        "answers": ["true", "false"]
+    },
+    "Q9": {
+        "text": "Jaki typ komunikatu o błędzie widzisz?",
+        "answers": ["network", "disk", "filesystem", "auth", "kernel", "none"]
+    },
+    "Q10": {
+        "text": "Czy dysk jest zaszyfrowany (LUKS)?",
+        "answers": ["true", "false"]
+    },
+    "Q11": {
+        "text": "Czy w ostatnim czasie wymieniono lub dodano podzespoły?",
+        "answers": ["true", "false"]
+    },
+    "Q12": {
+        "text": "Czy polecenie ping 8.8.8.8 zwraca odpowiedzi?",
+        "answers": ["true", "false"]
+    },
+    "rules": [
+        {
+            "if": {"Q1": "no_internet", "Q3": "true", "Q4": "false"},
+            "then": {
+                "diagnosis": "Awaria po stronie routera lub dostawcy internetu",
+                "action": "Zrestartuj router i sprawdź, czy inne urządzenia też nie mają dostępu"
+            }
+        },
+        {
+            "if": {"Q1": "no_internet", "Q3": "true", "Q4": "true"},
+            "then": {
+                "diagnosis": "Lokalny problem z konfiguracją połączenia na komputerze",
+                "action": "Sprawdź połączenie poleceniem nmcli connection show i ustawienia DNS w /etc/resolv.conf"
+            }
+        },
+        {
+            "if": {"Q1": "no_internet", "Q3": "false", "Q11": "true"},
+            "then": {
+                "diagnosis": "Brakujący sterownik karty sieciowej po wymianie sprzętu",
+                "action": "Sprawdź kartę poleceniem lspci -k i doinstaluj sterownik producenta"
+            }
+        },
+        {
+            "if": {"Q1": "no_internet", "Q3": "false", "Q11": "false"},
+            "then": {
+                "diagnosis": "Wyłączona karta Wi-Fi lub blokada sprzętowa",
+                "action": "Sprawdź rfkill list i odblokuj Wi-Fi"
+            }
+        },
+        {
+            "if": {"Q1": "no_internet", "Q12": "true", "Q9": "network"},
+            "then": {
+                "diagnosis": "Problem z rozwiązywaniem nazw DNS",
+                "action": "Sprawdź /etc/resolv.conf i tymczasowo użyj serwera DNS 8.8.8.8"
+            }
+        },
+        {
+            "if": {"Q1": "no_internet", "Q12": "false", "Q9": "network"},
+            "then": {
+                "diagnosis": "Brak trasy sieciowej lub błędna brama domyślna",
+                "action": "Sprawdź trasy poleceniem ip route i ustaw poprawną bramę"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q5": "full", "Q2": "true"},
+            "then": {
+                "diagnosis": "Zapełniony dysk po aktualizacji (cache lub logi)",
+                "action": "Wyczyść cache poleceniem sudo apt clean i sprawdź rozmiar /var/log"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q7": "exhausted", "Q5": "normal"},
+            "then": {
+                "diagnosis": "Brak pamięci RAM, system korzysta z wymiany (swap)",
+                "action": "Sprawdź zużycie poleceniem top i zamknij najbardziej obciążające procesy"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q7": "exhausted", "Q5": "full"},
+            "then": {
+                "diagnosis": "Jednoczesne przeciążenie pamięci i dysku",
+                "action": "Zwolnij miejsce na dysku, zakończ zbędne procesy i rozważ zwiększenie swapu"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q7": "normal", "Q5": "high", "Q9": "disk"},
+            "then": {
+                "diagnosis": "Intensywne operacje dyskowe blokują system",
+                "action": "Znajdź proces obciążający dysk poleceniem iotop"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q7": "normal", "Q5": "normal", "Q2": "true"},
+            "then": {
+                "diagnosis": "Nowe usługi uruchamiane przy starcie po aktualizacji",
+                "action": "Wypisz usługi poleceniem systemctl list-unit-files --state=enabled i wyłącz zbędne"
+            }
+        },
+        {
+            "if": {"Q1": "slowness", "Q7": "normal", "Q5": "normal", "Q2": "false", "Q6": "false"},
+            "then": {
+                "diagnosis": "Możliwy błąd systemu plików po nieprawidłowym wyłączeniu",
+                "action": "Zaplanuj sprawdzenie systemu plików przy starcie poleceniem sudo touch /forcefsck"
+            }
+        },
+        {
+            "if": {"Q1": "no_free_space_left", "Q5": "full", "Q10": "true"},
+            "then": {
+                "diagnosis": "Zaszyfrowany dysk zapełniony danymi użytkownika",
+                "action": "Przenieś duże pliki na inny nośnik lub usuń zbędne dane, korzystając z ncdu"
+            }
+        },
+        {
+            "if": {"Q1": "no_free_space_left", "Q5": "full", "Q10": "false"},
+            "then": {
+                "diagnosis": "Zapełniony dysk, prawdopodobnie przez logi lub kosz",
+                "action": "Ogranicz dziennik poleceniem sudo journalctl --vacuum-size=200M"
+            }
+        },
+        {
+            "if": {"Q1": "no_free_space_left", "Q9": "filesystem", "Q6": "false"},
+            "then": {
+                "diagnosis": "Uszkodzony system plików po nieprawidłowym wyłączeniu",
+                "action": "Odmontuj partycję i uruchom fsck"
+            }
+        },
+        {
+            "if": {"Q1": "no_free_space_left", "Q5": "normal", "Q9": "disk"},
+            "then": {
+                "diagnosis": "Błąd dysku, a nie brak miejsca",
+                "action": "Sprawdź stan dysku poleceniem sudo smartctl -a"
+            }
+        },
+        {
+            "if": {"Q1": "login_problem", "Q8": "false", "Q9": "auth"},
+            "then": {
+                "diagnosis": "Konto bez wymaganych uprawnień lub zablokowane",
+                "action": "Skontaktuj się z administratorem systemu lub sprawdź grupy poleceniem groups"
+            }
+        },
+        {
+            "if": {"Q1": "login_problem", "Q2": "true", "Q9": "auth"},
+            "then": {
+                "diagnosis": "Zmiana konfiguracji PAM po aktualizacji",
+                "action": "Sprawdź logi poleceniem journalctl -b -p err i cofnij ostatnią zmianę PAM"
+            }
+        },
+        {
+            "if": {"Q1": "login_problem", "Q2": "false", "Q9": "auth", "Q8": "true"},
+            "then": {
+                "diagnosis": "Nieprawidłowe hasło lub uszkodzony profil użytkownika",
+                "action": "Zresetuj hasło poleceniem sudo passwd nazwa_użytkownika"
+            }
+        },
+        {
+            "if": {"Q1": "login_problem", "Q9": "disk", "Q5": "full"},
+            "then": {
+                "diagnosis": "Brak miejsca w katalogu domowym blokuje logowanie",
+                "action": "Zwolnij miejsce w /home i spróbuj ponownie"
+            }
+        },
+        {
+            "if": {"Q1": "login_problem", "Q9": "none", "Q6": "false"},
+            "then": {
+                "diagnosis": "Pozostała blokada poprzedniej sesji",
+                "action": "Usuń pliki blokad sesji lub uruchom ponownie komputer"
+            }
+        },
+        {
+            "if": {"Q1": "permissions", "Q8": "false"},
+            "then": {
+                "diagnosis": "Brak uprawnień administratora",
+                "action": "Poproś administratora o nadanie uprawnień lub użyj konta z sudo"
+            }
+        },
+        {
+            "if": {"Q1": "permissions", "Q8": "true", "Q10": "true"},
+            "then": {
+                "diagnosis": "Nieprawidłowe uprawnienia na zaszyfrowanym dysku",
+                "action": "Sprawdź właściciela plików poleceniem ls -l i zamontuj dysk z właściwymi prawami"
+            }
+        },
+        {
+            "if": {"Q1": "permissions", "Q8": "true", "Q10": "false", "Q2": "true"},
+            "then": {
+                "diagnosis": "Zmiana reguł sudo po aktualizacji",
+                "action": "Sprawdź konfigurację poleceniem sudo visudo i przywróć poprawne reguły"
+            }
+        },
+        {
+            "if": {"Q1": "permissions", "Q8": "true", "Q10": "false", "Q2": "false"},
+            "then": {
+                "diagnosis": "Nieprawidłowy właściciel lub prawa dostępu do pliku",
+                "action": "Popraw prawa poleceniem chmod lub właściciela poleceniem chown"
+            }
+        },
+        {
+            "if": {"Q1": "boot_error", "Q2": "true", "Q6": "false"},
+            "then": {
+                "diagnosis": "Uszkodzenie po aktualizacji i nieprawidłowym wyłączeniu",
+                "action": "Uruchom poprzednie jądro z menu GRUB i sprawdź system plików"
+            }
+        },
+        {
+            "if": {"Q1": "boot_error", "Q2": "true", "Q6": "true"},
+            "then": {
+                "diagnosis": "Błąd nowego jądra po aktualizacji",
+                "action": "Wybierz poprzednie jądro w GRUB i ponownie zainstaluj najnowsze jądro"
+            }
+        },
+        {
+            "if": {"Q1": "boot_error", "Q9": "filesystem", "Q6": "false"},
+            "then": {
+                "diagnosis": "Uszkodzony system plików",
+                "action": "Uruchom system z nośnika ratunkowego i wykonaj fsck na partycji"
+            }
+        },
+        {
+            "if": {"Q1": "boot_error", "Q11": "true", "Q2": "false"},
+            "then": {
+                "diagnosis": "Zmiana sprzętu uniemożliwia start systemu",
+                "action": "Sprawdź wpisy w /etc/fstab i zaktualizuj identyfikatory UUID"
+            }
+        },
+        {
+            "if": {"Q1": "boot_error", "Q10": "true", "Q9": "auth"},
+            "then": {
+                "diagnosis": "Brak poprawnego hasła do odszyfrowania dysku",
+                "action": "Wprowadź hasło przy starcie lub sprawdź klucz LUKS"
+            }
+        },
+        {
+            "if": {"Q9": "kernel", "Q2": "true", "Q7": "unknown"},
+            "then": {
+                "diagnosis": "Problem ze sterownikiem po aktualizacji jądra",
+                "action": "Sprawdź błędy poleceniem dmesg -l err,crit i zainstaluj obsługiwany moduł"
+            }
+        },
+        {
+            "if": {"Q9": "kernel", "Q11": "true", "Q1": "no_internet"},
+            "then": {
+                "diagnosis": "Brak sterownika dla nowego podzespołu",
+                "action": "Sprawdź komunikaty poleceniem dmesg i zainstaluj sterownik od producenta"
+            }
+        },
+        {
+            "if": {"Q9": "network", "Q1": "slowness", "Q12": "false"},
+            "then": {
+                "diagnosis": "Opóźnienia wynikające z problemów z łączem",
+                "action": "Sprawdź utratę pakietów poleceniem ping -c 10 8.8.8.8"
+            }
+        },
+        {
+            "if": {"Q9": "disk", "Q1": "boot_error", "Q5": "full"},
+            "then": {
+                "diagnosis": "Zapełniony dysk uniemożliwia start systemu",
+                "action": "Uruchom z nośnika ratunkowego i zwolnij miejsce w /var lub /boot"
+            }
+        }
+    ]
+}
